@@ -3,6 +3,8 @@ library(ape)
 library(cubature)
 library(xtable)
 
+#rowmax <- function()
+
 find.c <- function(TT,lTT,clast=10000,alpha=0.05,length.out=10000){
   # function for finding the rejection threshold on layer 1.
   m <- length(TT)
@@ -27,6 +29,7 @@ find.c <- function(TT,lTT,clast=10000,alpha=0.05,length.out=10000){
    }
   return(list(out=out,prevrej=c(estfdr1[indx],estfdr2[indx])))
 }
+#(pval2,J22[testindex],alpha=alpha,prevrej=prevrejs)
 
 find.p <- function(Tp,lTT,clast=10000,alpha=0.05,length.out=10000,prevrej){
   #### function for finding the rejection threshold on layer \ell/
@@ -40,7 +43,11 @@ find.p <- function(Tp,lTT,clast=10000,alpha=0.05,length.out=10000,prevrej){
   TTc0 <- apply(Tp,1,'<',c0) #1000*199 matrix
   TTc0[,which(is.na(TTc0[1,]))] <- 0
   
-  TTc0 <- TTc0%*%diag(lTT)
+  if(is.null(dim(lTT))){
+    TTc0 <- TTc0%*%lTT
+  }else{
+    TTc0 <- TTc0%*%diag(lTT)
+  }
   
   estfdr1 <- prevrej[1]+mall*c0
   estfdr2 <- prevrej[2]+(pmax(apply(TTc0,1,sum,na.rm=TRUE),1))
@@ -121,53 +128,6 @@ mdist.groups <- function(x1,x2,Dist){
   return(max(Dist[x,x],na.rm=TRUE))
 }
 
-find_pars <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=30){
-  #### function to find tunning parameters for the aggregation tree construction.
-  ## arguments:
-  #locs: (matrix) hypotheses locations, not need to be defined is Distance matrix Dist is given.
-  #n: (integer) number of samples per hypothesis.
-  #ntip: (integer) number of hypothesis (also denoted by m in the paper).
-  #Mgroup: (integer) Maximum cardinality.
-  #cm: (integer) constant used for decide the maximum layer.
-  ## outputs: (list) list of tunning parameters.
-  
-  snm <- sqrt(n*log(ntip)*log(log(ntip)))
-  Maxlayers <- ceiling(log(ntip/cm,Mgroup))
-  
-  if(is.null(Dist)){
-    Dist <- as.matrix(dist(locs))
-  }
-  diag(Dist) <- 10000*max(Dist)
-  md <- max(apply(Dist,1,min))
-  
-  i.best <- 0
-  grids <- NULL
-  for(kk in 2:Maxlayers){
-    seq1 <- gi <- eqs <-  NULL
-    i <- 2+i.best
-    eq <- 1
-    while(i/snm<=md & eq<5){
-      gridsi <- c(grids,i)
-      Atree <- A.tree.mult(tree=locs,Dist0=Dist,grids=gridsi/snm,Mgroup=Mgroup)
-      seq1 <- c(seq1,i)
-      gi <- c(gi,sum(rowSums(Atree$Llist[[length(gridsi)]])>=2))
-      i=i+2
-      eqs <- c(eqs,1)
-      if(length(gi)>1){
-        if(gi[length(gi)]<=gi[length(gi)-1]){
-          eqs[length(gi)] <- eqs[length(gi)-1]+1
-        }
-      }
-      eq <- eqs[length(eqs)]
-    }
-    i.best <- seq1[min(which(gi==max(gi)))]
-    grids=c(grids,i.best)
-    print(xtable(rbind(seq1,gi,eqs),digits=0))
-  }
-  
-  return(list("grids"=grids/snm,"L"=Maxlayers,"M"=Mgroup))
-}
-
 
 A.tree.mult <- function(tree=NULL,grids,Dist0=NULL,Mgroup=3){
   #### function for aggregation tree construction
@@ -178,7 +138,7 @@ A.tree.mult <- function(tree=NULL,grids,Dist0=NULL,Mgroup=3){
   # Dist0: (matrix) distance matrix
   # Mgroup: (integer) maximum cardinality of the child node set of the nodes in the aggregation tree.
   ## output: (list)
-  # Llist: (list of matrixes) Aggregation tree presented in the form of matrix list.
+  # Llist: (list of matrixs) Aggregation tree presented in the form of matrix list.
   # Dist0: (matrix) distance matrix
   if(is.null(Dist0)){
     Dist0 <- Dist <- as.matrix(dist(tree))
