@@ -1,5 +1,6 @@
 DART_function.R: functions for DART.
 FDRL_function.R: functions for FDRL method from Zhang et.al, 2011.
+Find_grids.R: a function to find the tunning parameters.
 
 In Simulation/ :
 
@@ -8,3 +9,10 @@ Plot_DART_FDRL.R: functions for visualizing simulation results when M=3 (Figure 
 Plot_INF.R: functions for visualizing simulation results when M=Inf (Figure S1).
 Sample.R: A toy example about how to use the DART method.
 
+In Data_Analysis/ :
+
+Data.RData: Cleaned microbiome data.
+Dist0.RData: Distance matrix among ASVs.
+DataAnalysis_alldata.R: Generate the data analysis result (.csv file) based on the entire data.
+DataAnalysis_Bootstrap.R: Generate the validation result (.csv file) based on the bootstrap resampling.
+DataAnalysis_Plot.R: Generate the Figure 3 and Table 1 in the manuscript based on the previous data analysis results.
