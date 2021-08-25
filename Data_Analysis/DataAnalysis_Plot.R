@@ -103,7 +103,9 @@ heatmap.detect <- ggplot(data = outdflong, aes(x = X, y = variable)) +
         panel.border = element_blank()
         )
 
-
+pdf("see.pdf")
+print(heatmap.detect)
+dev.off()
 ################# Histogram (from bootstrap) #################
 
 Vresult <- read.csv("Vresult_ANEW.csv")

@@ -128,18 +128,19 @@ write.csv(outall,"abundance_100_out.csv")
 
 #####################nlap (SE2)############################
 
-simdata <- function(n=90,nnodes,Dist0,normalp=0){
+simdata <- function(n=90,nnodes,Dist0,normalp=0.96){
   scale1 <- scale2 <- 1
   
   b11 <- 0
   b12 <- dnorm(Dist0[7,],0,0.1)*1
   b13 <- dnorm(Dist0[22,],0,1)*2-0.2
   b1 <- (b11+b13+b12)
-  beta1 <- ifelse(b1>0.15,b1,0)*sqrt(n)*0.6
+  beta1 <- ifelse(b1>0.15,b1,0)*sqrt(n)*0.4
   
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rlaplace(nnodes,location=beta1)*(1-norm)+rnorm(nnodes,mean=beta1)*norm
-  T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  T1 <- pnorm(-abs(T1))
+  #T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1 <- matrix(T1,1,nnodes)
   
@@ -173,7 +174,7 @@ result %>% group_by(alpha,Layers) %>% summarize(FDP=mean(FDR),Sensitivity=mean(P
 out$Test <- ifelse(out$Layers==1,"1 Layer",paste0(out$Layers," Layers"))
 out <- out[,-2]
 
-registerDoParallel(cores=15)
+registerDoParallel(cores=25)
 ki=c(2,3)
 rng <- RNGseq(nsim*length(alphai)*length(ki), 33344)
 result <- (foreach(j=1:length(alphai),.combine=rbind)%:%
@@ -211,7 +212,7 @@ simdata <- function(n=90,nnodes,Dist0){
   b13 <- dnorm(Dist0[22,],0,1)*2-0.2
   b1 <- (b11+b13+b12)
   beta1 <- ifelse(b1>0.15,b1,0)
-  beta1=beta1/2.5
+  beta1=beta1/3
   
   X <- mvrnorm(n=n,mu=beta1,Sigma <- diag(rep(1,nnodes)))
   
@@ -283,7 +284,7 @@ write.csv(outall,"simple_100_out.csv")
 
 ##################### 2T (SE3)##############################
 
-simdata <- function(n=90,nnodes,Dist0,normalp=0,df=2){
+simdata <- function(n=90,nnodes,Dist0,normalp=0.96,df=5){
   scale1 <- scale2 <- 1
   
   b11 <- 0
@@ -292,27 +293,20 @@ simdata <- function(n=90,nnodes,Dist0,normalp=0,df=2){
   b1 <- (b11+b13+b12)
   beta1 <- ifelse(b1>0.15,b1,0)
   
-  beta1=beta1/6
+  beta1=beta1/3
   
   X <- mvrnorm(n=n,mu=beta1,Sigma <- diag(rep(1,nnodes)))
   T1 <- sqrt(n)*colMeans(X)
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rt(nnodes,ncp=beta1*sqrt(n),df=df)*(1-norm)+T1*norm
-  T1 <- pt(-abs(T1),ncp=beta1*sqrt(n),df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- pt(-abs(T1),ncp=0,df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  T1 <- pnorm(-abs(T1))*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1[is.na(T1)]=100
   T1 <- matrix(T1,1,nnodes)
   
   return(list(stat=T1,beta1=beta1))
 }
-
-# function to generate the tree
-nodes.2D.simu <- function(ntips){
-  d1 <- rnorm(ntips,0,2)
-  d2 <- runif(ntips,0,4)
-  return(cbind(d1,d2))
-}
-
 
 registerDoParallel(cores=15)
 alphai=c(0.05,0.1,0.15,0.20)
@@ -467,5 +461,3 @@ outall <- rbind(out,out.fdrl)
 write.csv(outall,"cox_100_out.csv")
 
 q(save='no')
-
-

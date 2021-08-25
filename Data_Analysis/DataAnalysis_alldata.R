@@ -44,7 +44,7 @@ Rejs <- test.mult(Llist=Atree$Llist,Dist0=Dist0,
 detect <- rep(0,length(nodes.index))
 detect[Rejs[[1]]] <- 1
 detect[Rejs[[2]]] <- 2
-detect <- factor(detect)
+#detect <- factor(detect)
 
 
 #write the testing result to a csv file
@@ -64,10 +64,10 @@ fdrl.ii.3[test.fdrl2(T1p=pvals,Dist0,k=3,alpha=alpha)] <- 1
 
 
 #write the testing result to a csv file
-outdf <- data.frame("ASV"=nodes.index,"pvals"=pvals,"detect1"=0,
-                    "detect2"=as.integer(detect)-1,
+outdf <- data.frame("ASV"=nodes.index,"pvals"=pvals,"detect1"=ifelse(detect==1,1,0),
+                    "detect2"=ifelse(detect==2,1,0),
                     "FDRL.I.2"=fdrl.i.2,"FDRL.I.3"=fdrl.i.3,
                     "FDRL.II.2"=fdrl.ii.2,"FDRL.II.3"=fdrl.ii.3,
                     "ps"=0)
-outdf$detect1[54]=1
+#outdf$detect1[54]=1
 write.csv(outdf,"outdf_ANEW_ALL.csv")

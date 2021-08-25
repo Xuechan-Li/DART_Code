@@ -130,22 +130,21 @@ outall <- rbind(out,out.fdrl)
 write.csv(outall,"abundance_100_out.csv")
 
 
-
-
 #####################nlap (SE2)############################
 
-simdata <- function(n=90,nnodes,Dist0,normalp=0){
+simdata <- function(n=90,nnodes,Dist0,normalp=0.96){
   scale1 <- scale2 <- 1
   
   b11 <- 0
   b12 <- dnorm(Dist0[7,],0,0.1)*1
   b13 <- dnorm(Dist0[22,],0,1)*2-0.2
   b1 <- (b11+b13+b12)
-  beta1 <- ifelse(b1>0.15,b1,0)*sqrt(n)*0.6
+  beta1 <- ifelse(b1>0.15,b1,0)*sqrt(n)*0.4
   
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rlaplace(nnodes,location=beta1)*(1-norm)+rnorm(nnodes,mean=beta1)*norm
-  T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  T1 <- pnorm(-abs(T1))
+  #T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1 <- matrix(T1,1,nnodes)
   
@@ -210,7 +209,7 @@ simdata <- function(n=90,nnodes,Dist0){
   b13 <- dnorm(Dist0[22,],0,1)*2-0.2
   b1 <- (b11+b13+b12)
   beta1 <- ifelse(b1>0.15,b1,0)
-  beta1=beta1/2.5
+  beta1=beta1/3
   
   X <- mvrnorm(n=n,mu=beta1,Sigma <- diag(rep(1,nnodes)))
   
@@ -275,7 +274,7 @@ write.csv(outall,"simple_100_out.csv")
 
 ##################### 2T (SE3)##############################
 
-simdata <- function(n=90,nnodes,Dist0,normalp=0,df=2){
+simdata <- function(n=90,nnodes,Dist0,normalp=0.96,df=5){
   scale1 <- scale2 <- 1
   
   b11 <- 0
@@ -284,13 +283,14 @@ simdata <- function(n=90,nnodes,Dist0,normalp=0,df=2){
   b1 <- (b11+b13+b12)
   beta1 <- ifelse(b1>0.15,b1,0)
   
-  beta1=beta1/6
+  beta1=beta1/3
   
   X <- mvrnorm(n=n,mu=beta1,Sigma <- diag(rep(1,nnodes)))
   T1 <- sqrt(n)*colMeans(X)
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rt(nnodes,ncp=beta1*sqrt(n),df=df)*(1-norm)+T1*norm
-  T1 <- pt(-abs(T1),ncp=beta1*sqrt(n),df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- pt(-abs(T1),ncp=0,df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  T1 <- pnorm(-abs(T1))*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1[is.na(T1)]=100
   T1 <- matrix(T1,1,nnodes)
@@ -447,4 +447,4 @@ write.csv(outall,"cox_100_out.csv")
 
 q(save='no')
 
-
+#latexdiff d1/main.tex d2/main.tex --flatten > diff.tex

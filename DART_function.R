@@ -95,7 +95,7 @@ make.group <- function(Dist,grids=0.5,miter=1000,Mgroup=5){
       outmatrix0 <- outmatrix0[-gijk,]
       
       newmax <- max(Dist[gijk,gijk])
-      newrow <- rowMax(cbind(diag(Dist)[-gijk],Dist[-gijk,gijk],newmax))@x
+      newrow <- qlcMatrix::rowMax(cbind(diag(Dist)[-gijk],Dist[-gijk,gijk],newmax))@x
       
       Dist <- rbind(cbind(Dist[-gijk,-gijk],newrow),c(newrow,newmax))
       Dist1 <- Dist
@@ -160,6 +160,42 @@ A.tree.mult <- function(tree=NULL,grids,Dist0=NULL,Mgroup=3){
   return(list(Llist=Llist,Dist0=Dist0))
 }
 
+A.tree.mult2 <- function(tree=NULL,Dist0=NULL,Mgroup=3,L=NULL){
+  #### function for aggregation tree construction assuming the grids= min(d_ij)
+  ## arguments:
+  # tree: (matrix) matrix containing the location information for the features linking to the hypotheses
+  # Not needed if distance matrix Dist0 is ready.
+  # grids: (vector) vector of maximum distance g^{(\ell)} on layers \ell=2,...,L. The maximum distance on the first layer is always 0. 
+  # Dist0: (matrix) distance matrix
+  # Mgroup: (integer) maximum cardinality of the child node set of the nodes in the aggregation tree.
+  ## output: (list)
+  # Llist: (list of matrixs) Aggregation tree presented in the form of matrix list.
+  # Dist0: (matrix) distance matrix
+  
+  if(is.null(Dist0)){
+    Dist0 <- Dist <- as.matrix(dist(tree))
+  }else{
+    Dist <- Dist0
+  }
+  m <- nrow(Dist0)
+  if(is.null(L)){
+    L <- ceiling(log(m/30,Mgroup))
+  }
+  # Layer 2
+  Llist <- list()
+
+  # Layer \ell
+  for(s in 1:(L-1)){
+    Dist1 <- Dist
+    diag(Dist1) <- 10000*max(Dist)
+    md <- max(apply(Dist1,1,min))
+    outall <- make.group(Dist,grids=md,Mgroup=Mgroup)
+    Llist[[s]] <- outall$outmatrix
+    Dist <- outall$Dist
+  }
+  return(list(Llist=Llist,Dist0=Dist0))
+}
+
 
 test.mult <- function(alpha=0.05,Llist,Dist0,T1){
   #### MAIN function of DART framwork.
@@ -167,7 +203,7 @@ test.mult <- function(alpha=0.05,Llist,Dist0,T1){
   # alpha: (numeric) Vector of desired FDR
   # Llist: (list of matrixes) Aggregation tree presented in the form of matrix list.
   # Dist0: (matrix) Distance matrix
-  # T1: (vector) Input p-values
+  # T1: (vector) Input Z-values transformed from p-values
   ## output: (list of vectors)
   # Index of rejected nodes on each layers
   Rej <- list()
@@ -286,3 +322,55 @@ mt.mult <- function(n=500,alphai,Llist,Dist0){
   return(fdrpower)
 }
 
+
+
+find_pars <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=30){
+  #### function to find tunning parameters for aggregation tree construction.
+  ## arguments:
+  #locs: (matrix) hypotheses locations, not need to be defined is Distance matrix Dist is given.
+  #n: (integer) number of samples per hypothesis.
+  #ntip: (integer) number of hypothesis (also denoted by m in the paper).
+  #Mgroup: (integer) Maximum cardinality.
+  #cm: (integer) constant used for decide the maximum layer.
+  ## outputs: (list) list of tunning parameters.
+  
+  snm <- sqrt(n*log(ntip)*log(log(ntip)))
+  Maxlayers <- ceiling(log(ntip/cm,Mgroup))
+  
+  if(is.null(Dist)){
+    Dist <- as.matrix(dist(locs))
+  }
+  Dist0 <- Dist
+  diag(Dist) <- 10000*max(Dist)
+  md <- max(apply(Dist,1,min))
+  
+  i.best <- 0
+  grids <- md0 <- NULL
+  
+  for(kk in 2:Maxlayers){
+    seq1 <- gi <- eqs <-  NULL
+    i <- i.best+2
+    eq <- 1
+    md0 <- c(md0,md*(Mgroup^(kk-2)*2-1))
+    
+    while(i/snm<=md*(Mgroup^(kk-2)*2-1)&eq<=10){
+      gridsi <- c(grids,i)
+      Atree <- A.tree.mult(tree=locs,Dist0=Dist0,grids=gridsi/snm,Mgroup=Mgroup)
+      seq1 <- c(seq1,i)
+      gi <- c(gi,sum(rowSums(Atree$Llist[[length(gridsi)]])>=2))
+      i=i+2
+      eqs <- c(eqs,1)
+      if(length(gi)>1){
+        if(gi[length(gi)]<=gi[length(gi)-1]){
+          eqs[length(gi)] <- eqs[length(gi)-1]+1
+        }
+      }
+      eq <- eqs[length(eqs)]
+    }
+    i.best <- seq1[min(which(gi==max(gi)))]
+    grids=c(grids,i.best)
+    print(xtable(rbind(seq1,gi,eqs),digits=0))
+  }
+  
+  return(list("grids"=grids/snm,"L"=Maxlayers,"M"=Mgroup))
+}

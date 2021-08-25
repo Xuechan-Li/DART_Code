@@ -26,7 +26,7 @@ ntip=1000;n=300
 toy <- nodes.2D.simu(ntip)
 grids <- c(8,22,56)
 snm <- sqrt(n*log(ntip)*log(log(ntip)))
-Atree <- A.tree.mult(toy,grids=grids/snm,Mgroup=3)
+Atree <- A.tree.mult2(tree=toy,Mgroup=3)
 
 # set up replication times B.
 nsim=200
@@ -46,6 +46,7 @@ simdata <- function(n=300,nnodes,Dist0){
   b1 <- (b11+b12)
   #420,348
   b1[c(300,200,400,100,500,600,700,800,900,1000)] <- 10
+  #b1 <- b1+rnorm(length(b1),0,0.05)
   beta1 <- ifelse(abs(b1)>0.15,b1,0)
   
   beta1=beta1/1.2
@@ -76,11 +77,11 @@ simdata <- function(n=300,nnodes,Dist0){
   return(list(stat=T1,beta1=beta1))
 }
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 
 alphai=c(0.05,0.1,0.15,0.20)
-rng <- RNGseq(nsim*length(alphai), 5570)
+rng <- RNGseq(nsim*length(alphai), 5555)
 result <- foreach(j=1:length(alphai),.combine=rbind)%:%foreach(i=c(1:nsim),r=rng[(j-1)*nsim+1:nsim],
                                                                .combine=rbind,.packages=c("cubature"))%dopar% {
                                                                  # set RNG seed
@@ -102,7 +103,7 @@ out <- out[,-2]
 
 print(xtable(out,digits=4))
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 ki=6:7
 rng <- RNGseq(nsim*length(alphai)*length(ki), 33344)
@@ -134,7 +135,7 @@ write.csv(outall,"abundance_1000_out.csv")
 
 #####################nlap (SE2)############################
 
-simdata <- function(n=300,nnodes,Dist0,normalp=0){
+simdata <- function(n=300,nnodes,Dist0,normalp=0.96){
   scale1 <- scale2 <- 1
 
   b11 <- pmax(dnorm(Dist0[156,],0,0.8)*3.4-0.8,0)
@@ -143,11 +144,13 @@ simdata <- function(n=300,nnodes,Dist0,normalp=0){
   b1 <- (b11+b12)
   #420,348
   b1[c(300,200,400,100,500,600,700,800,900,1000)] <- 10
-  beta1 <- ifelse(abs(b1)>0.15,b1,0)*sqrt(n)/6
+  #b1 <- b1+rnorm(length(b1),0,0.05)
+  beta1 <- ifelse(abs(b1)>0.15,b1,0)*sqrt(n)/6.5
   
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rlaplace(nnodes,location=beta1)*(1-norm)+rnorm(nnodes,mean=beta1)*norm
-  T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  T1 <- pnorm(-abs(T1))
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1 <- matrix(T1,1,nnodes)
   
@@ -161,10 +164,10 @@ nodes.2D.simu <- function(ntips){
   return(cbind(d1,d2))
 }
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 alphai=c(0.05,0.1,0.15,0.20)
-rng <- RNGseq(nsim, 5555)
+rng <- RNGseq(nsim, 5557)
 
 result <- foreach(i=c(1:nsim),r=rng,
                   .combine=rbind,.packages=c("cubature","LaplacesDemon"))%dopar% {
@@ -182,7 +185,7 @@ result %>% group_by(alpha,Layers) %>% summarize(FDP=mean(FDR),Sensitivity=mean(P
 out$Test <- ifelse(out$Layers==1,"1 Layer",paste0(out$Layers," Layers"))
 out <- out[,-2]
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 ki=6:7
 rng <- RNGseq(nsim*length(alphai)*length(ki), 33344)
@@ -221,6 +224,7 @@ simdata <- function(n=300,nnodes,Dist0){
   b13 <- -dnorm(Dist0[90,],0,0.15)*2
   b1 <- (b11+b12)
   b1[c(300,200,400,100,500,600,700,800,900,1000)] <- 10
+  #b1 <- b1+rnorm(length(b1),0,0.05)
   beta1 <- ifelse(abs(b1)>0.15,b1,0)
   
   beta1=beta1/7
@@ -239,7 +243,7 @@ nodes.2D.simu <- function(ntips){
   return(cbind(d1,d2))
 }
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 alphai=c(0.05,0.1,0.15,0.20)
 rng <- RNGseq(nsim, 5555)
@@ -265,7 +269,7 @@ out <- out[,-2]
 print(xtable(out,digits=4))
 
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 ki=6:7
 rng <- RNGseq(nsim*length(alphai)*length(ki), 33344)
@@ -294,9 +298,9 @@ outall <- rbind(out,out.fdrl)
 
 write.csv(outall,"simple_1000_out.csv")
 
-##################### 2T (SE3) ##############################
+##################### 5T (SE3) ##############################
 
-simdata <- function(n=300,nnodes,Dist0,normalp=0,df=5){
+simdata <- function(n=300,nnodes,Dist0,normalp=0.96,df=5){
   scale1 <- scale2 <- 1
   
   b11 <- pmax(dnorm(Dist0[156,],0,0.8)*3.4-0.8,0)
@@ -305,15 +309,19 @@ simdata <- function(n=300,nnodes,Dist0,normalp=0,df=5){
   b1 <- (b11+b12)
   #420,348
   b1[c(300,200,400,100,500,600,700,800,900,1000)] <- 10
+  #b1 <- b1+rnorm(length(b1),0,0.05)
   beta1 <- ifelse(abs(b1)>0.15,b1,0)
   
-  beta1=beta1/14
+  beta1=beta1/6.5
   
   X <- mvrnorm(n=n,mu=beta1,Sigma <- diag(rep(1,nnodes)))
   T1 <- matrix(sqrt(n)*colMeans(X),1,nnodes)
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rt(nnodes,ncp=beta1*sqrt(n),df=df)*(1-norm)+T1*norm
-  T1 <- pt(-abs(T1),ncp=beta1*sqrt(n),df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- pt(-abs(T1),ncp=0,df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- rt(nnodes,ncp=beta1*sqrt(n),df=df)
+  #T1 <-  pt(-abs(T1),ncp=0,df=df)
+  T1 <-  pnorm(-abs(T1))
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1 <- matrix(T1,1,nnodes)
   
@@ -328,7 +336,7 @@ nodes.2D.simu <- function(ntips){
 }
 
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 alphai=c(0.05,0.1,0.15,0.20)
 rng <- RNGseq(nsim, 5555)
@@ -344,7 +352,6 @@ stopCluster(cl)
 write.csv(result,"T2_L3.csv")
 
 
-
 result <- read.csv("T2_L3.csv")
 result <- result[,-1]
 result %>% group_by(alpha,Layers) %>% summarize(FDP=mean(FDR),Sensitivity=mean(Power))->out
@@ -356,7 +363,7 @@ head(out)
 print(xtable(out,digits=4))
 
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 ki=6:7
 rng <- RNGseq(nsim*length(alphai)*length(ki), 33344)
@@ -398,6 +405,7 @@ simdata <- function(n=300,nnodes,Dist0){
   b1 <- (b11+b12)
   #420,348
   b1[c(300,200,400,100,500,600,700,800,900,1000)] <- 10
+  #b1 <- b1+rnorm(length(b1),0,0.05)
   beta1 <- ifelse(abs(b1)>0.15,b1,0)
   beta1=beta1/3.5
   
@@ -429,7 +437,7 @@ nodes.2D.simu <- function(ntips){
   return(cbind(d1,d2))
 }
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 alphai=c(0.05,0.1,0.15,0.20)
 rng <- RNGseq(nsim, 5555)
@@ -457,7 +465,7 @@ head(out)
 print(xtable(out,digits=4))
 
 
-cl=makeCluster(10)
+cl=makeCluster(40)
 registerDoParallel(cl)
 ki=6:7
 rng <- RNGseq(nsim*length(alphai)*length(ki), 33344)

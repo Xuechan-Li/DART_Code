@@ -111,20 +111,22 @@ write.csv(outall,"INF_abundance_1000_out.csv")
 
 #####################nlap (SE2)############################
 
-simdata <- function(n=300,nnodes,Dist0,normalp=0){
+simdata <- function(n=300,nnodes,Dist0,normalp=0.96){
   scale1 <- scale2 <- 1
-
+  
   b11 <- pmax(dnorm(Dist0[156,],0,0.8)*3.4-0.8,0)
   b12 <- dnorm(Dist0[7,],0,0.05)*3
   b13 <- -dnorm(Dist0[90,],0,0.15)*2
   b1 <- (b11+b12)
   #420,348
   b1[c(300,200,400,100,500,600,700,800,900,1000)] <- 10
-  beta1 <- ifelse(abs(b1)>0.15,b1,0)*sqrt(n)/6
+  #b1 <- b1+rnorm(length(b1),0,0.05)
+  beta1 <- ifelse(abs(b1)>0.15,b1,0)*sqrt(n)/6.5
   
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rlaplace(nnodes,location=beta1)*(1-norm)+rnorm(nnodes,mean=beta1)*norm
-  T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- plaplace(-abs(T1),location=0)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  T1 <- pnorm(-abs(T1))
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1 <- matrix(T1,1,nnodes)
   
@@ -204,9 +206,9 @@ outall <- out
 
 write.csv(outall,"INF_simple_1000_out.csv")
 
-##################### 2T (SE3)##############################
+##################### 5T (SE3)##############################
 
-simdata <- function(n=300,nnodes,Dist0,normalp=0,df=5){
+simdata <- function(n=300,nnodes,Dist0,normalp=0.96,df=5){
   scale1 <- scale2 <- 1
   
   b11 <- pmax(dnorm(Dist0[156,],0,0.8)*3.4-0.8,0)
@@ -215,15 +217,19 @@ simdata <- function(n=300,nnodes,Dist0,normalp=0,df=5){
   b1 <- (b11+b12)
   #420,348
   b1[c(300,200,400,100,500,600,700,800,900,1000)] <- 10
+  #b1 <- b1+rnorm(length(b1),0,0.05)
   beta1 <- ifelse(abs(b1)>0.15,b1,0)
   
-  beta1=beta1/14
+  beta1=beta1/6.5
   
   X <- mvrnorm(n=n,mu=beta1,Sigma <- diag(rep(1,nnodes)))
   T1 <- matrix(sqrt(n)*colMeans(X),1,nnodes)
   norm <- rbinom(nnodes,1,normalp)
   T1 <- rt(nnodes,ncp=beta1*sqrt(n),df=df)*(1-norm)+T1*norm
-  T1 <- pt(-abs(T1),ncp=beta1*sqrt(n),df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- pt(-abs(T1),ncp=0,df=df)*(1-normalp)+pnorm(abs(T1),mean=0,lower.tail=FALSE)*normalp
+  #T1 <- rt(nnodes,ncp=beta1*sqrt(n),df=df)
+  #T1 <-  pt(-abs(T1),ncp=0,df=df)
+  T1 <-  pnorm(-abs(T1))
   T1 <- qnorm(2*T1,lower.tail=FALSE)
   T1 <- matrix(T1,1,nnodes)
   

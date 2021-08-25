@@ -2,12 +2,10 @@
 
 library("MASS")
 
-setwd("/Users/xuechan/Documents/Study/Rotation-Jichun/project_1/DART_Code/Simulation")
+setwd("/Users/xuechan/Documents/Study/Rotation-Jichun/Micro_mediation/DART_Code")
 
 
 source("../DART_function.R")
-
-source("../Find_grids.R")
 
 ########## Generate data: p-value and distance matrix ###########
 
@@ -56,8 +54,10 @@ data <- simdata(n=n,nnodes=100,Dist0=Dist0)
 
 ########## Use DART to conduct testing ###########
 
+# Find tunning parameters for constructing the aggregation tree
+tpars <- find_pars(n=90,ntip=100,Mgroup=3,Dist=Dist0)
 # Generate aggregation tree
-Atree <- A.tree.mult2(Mgroup = 3, Dist0 = Dist0)
+Atree <- A.tree.mult(grids=tpars$grids,Mgroup=tpars$M,Dist0=Dist0)
 # Conduct multiple testing embedded in the aggregation tree
 Test.result <- test.mult(alpha=0.05,Llist=Atree$Llist,Dist0=Dist0,T1=data$stat)
 #Results: (Index of rejected nodes)
