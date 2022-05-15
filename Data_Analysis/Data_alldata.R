@@ -29,7 +29,7 @@ m <- length(nodes.index)
 snm <- sqrt(n*log(m)*log(log(m)))
 
 # t1 <- Sys.time()
-# Atree <- A.tree.mult(Dist0=Dist0,grids=c(16,16),Mgroup=3)
+# Atree <- A.tree.mult(Dist0=Dist0,grids=c(16,16)/snm,Mgroup=3)
 # t2 <- Sys.time()
 # t2-t1
 # save(Atree,file="Pars.RData")
@@ -60,7 +60,8 @@ table(rowSums(Atree$Llist[[1]]))
 load(file="clintest_new.RData")
 set.seed(123)
 Out <- NULL
-clintest <- clintest%>%filter(time<=365)
+clintest <- clintest%>%filter(time<=365)%>%
+  mutate(inout=ifelse(inout=="Home Care",1,0))
   #mutate(time=log(time+1))
 library(doParallel)
 library(foreach)
@@ -74,9 +75,19 @@ Out <- foreach(i=nodes.index,.combine=rbind,.packages=c("lme4"))%dopar%
     fm0 <- lmer(form0, data=clintest)
     fm1 <- lmer(form1, data=clintest)
     cis <- confint(fm1)
-    c(summary(fm1)$coef[2,1],cis[4,],
-      summary(fm1)$coef[3,1],cis[5,],
-      summary(fm1)$coef[4,1],cis[6,],
+    
+    #sum of covariate confidence interval
+    
+    coefs <- summary(fm1)$coef
+    cors <- vcov(fm1)[c(2,4),c(2,4)]
+    
+    coef23 <- coefs[2,1]+coefs[4,1]
+    ci23 <- coef23+c(-1.96,1.96)*sqrt(sum(cors))
+
+    c(coefs[2,1],cis[4,],
+      coefs[3,1],cis[5,],
+      coefs[4,1],cis[6,],
+      coef23,ci23,
               anova(fm0,fm1)[2,8])
   }
 stopCluster(cl)
@@ -97,6 +108,7 @@ t2 <- Sys.time()
 
 colnames(Out) <- c("Time","Time_lower","Time_upper","Group","Group_lower","Group_upper",
   "Interact","Interact_lower","Interact_upper",
+  "Sum","Sum_lower","Sum_upper",
   "Pvals")
 Out <- data.frame(Out)
 #######################################################

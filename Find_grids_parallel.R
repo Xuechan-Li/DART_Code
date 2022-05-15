@@ -17,52 +17,9 @@ nodes.2D.simu <- function(ntips){
   return(cbind(d1,d2))
 }
 
-
-find_pars_Layer1 <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=50,ncore=40){
-  #### function to find tunning parameters for aggregation tree construction.
-  ## arguments:
-  #locs: (matrix) hypotheses locations, not need to be defined is Distance matrix Dist is given.
-  #n: (integer) number of samples per hypothesis.
-  #ntip: (integer) number of hypothesis (also denoted by m in the paper).
-  #Mgroup: (integer) Maximum cardinality.
-  #cm: (integer) constant used for decide the maximum layer.
-  ## outputs: (list) list of tunning parameters.
-  
-  snm <- sqrt(n*log(ntip)*log(log(ntip)))
-  Maxlayers <- ceiling(log(ntip/cm,Mgroup))
-  
-  if(is.null(Dist)){
-    Dist <- as.matrix(dist(locs))
-  }
-  Dist0 <- Dist
-  diag(Dist) <- 10000*max(Dist)
-  md <- max(apply(Dist,1,min))
-  
-  i.best <- 0
-  grids <- NULL
-  
-  cl=makeCluster(ncore)
-  registerDoParallel(cl)
-  for(kk in 2:Maxlayers){
-    gridi <- seq(i.best+4,md*snm,4)
-    
-    outv=foreach(grid=gridi,.combine=rbind)%dopar%{
-      Atree <- A.tree.mult(tree=locs,Dist0=Dist0,
-                           grids=c(grids,grid)/snm,Mgroup=Mgroup)
-      c("ct"=sum(rowSums(Atree$Llist[[kk-1]])>=2),"grid"=grid,"Md"=Atree$Md[[kk-1]])
-    }
-    
-    outv1 <- data.frame(outv)%>%filter(!duplicated(ct))%>%
-      top_n(1)
-    i.best <- outv1$grid
-    grids <- c(grids,i.best)
-    md <- outv1$Md
-  }
-  stopCluster(cl)
-  
-  return(list("grids"=grids/snm,"L"=Maxlayers,"M"=Mgroup))
-}
-
+################################
+#### Find_grids in Simulation
+################################
 Mgroup=3
 set.seed(123)
 ntip=1000;n=300;ncore=40;cm=100#56,96,M=2

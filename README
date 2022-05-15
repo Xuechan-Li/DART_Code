@@ -1,18 +1,18 @@
 DART_function.R: functions for DART.
 FDRL_function.R: functions for FDRL method from Zhang et.al, 2011.
-Find_grids.R: a function to find the tunning parameters.
+Find_grids_parallel.R: code to find the tunning parameters.
 
 In Simulation/ :
 
-AALL_Normcomb.R; AALL_Normcomb_INF.R; AALL_100_Normcomb.R; AALL_100_Normcomb_INF.R: Simulation codes for (n,m,M)=(1000,300,3); (1000,300,Inf); (100,90,3); (100,90,Inf), respectively.
-Plot_DART_FDRL.R: functions for visualizing simulation results when M=3 (Figure 2).
-Plot_INF.R: functions for visualizing simulation results when M=Inf (Figure S1).
-Sample.R: A toy example about how to use the DART method.
+AALL_Normcomb.R: Simulation codes for (n,m,M)=(1000,300,3), including sensitivity analysis under different \tau.
+AALL_M_Normcomb.R: Simulation codes for sensitivity under different M.
+Plot_eta.R: functions for visualizing simulated hypotheses' affiliated location and their corresponding \eta_i (Figure A1).
+Plot_Sensitivity_DART.R: functions for visualizing simulation results under different M and \tau.
 
 In Data_Analysis/ :
 
-Data.RData: Cleaned microbiome data.
-Dist0.RData: Distance matrix among ASVs.
-DataAnalysis_alldata.R: Generate the data analysis result (.csv file) based on the entire data.
-DataAnalysis_Bootstrap.R: Generate the validation result (.csv file) based on the bootstrap resampling.
-DataAnalysis_Plot.R: Generate the Figure 3 and Table 1 in the manuscript based on the previous data analysis results.
+clintest_new.RData: Cleaned microbiome data.
+Dist0_new.RData: Distance matrix among ASVs.
+taxtab_rdp_rc.RData: taxonomy information of each ASV.
+Data_alldata.R: Generate the data analysis result.
+Data_plot.R: Visualise the data analysis result.
