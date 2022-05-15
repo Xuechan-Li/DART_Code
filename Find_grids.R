@@ -2,7 +2,7 @@ library(ape)
 library(cubature)
 library(xtable)
 
-#source("DART_function.R")
+source("DART_function.R")
 
 
 find_pars <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=30){
@@ -34,7 +34,7 @@ find_pars <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=30){
     eq <- 1
     md0 <- c(md0,md*(Mgroup^(kk-2)*2-1))
     
-    while(i/snm<=md*(Mgroup^(kk-2)*2-1)&eq<=10){
+    while(i/snm<=md*(Mgroup^(kk-2)*2-1)&eq<=3){
       gridsi <- c(grids,i)
       Atree <- A.tree.mult(tree=locs,Dist0=Dist0,grids=gridsi/snm,Mgroup=Mgroup)
       seq1 <- c(seq1,i)
@@ -67,37 +67,40 @@ nodes.2D.simu <- function(ntips){
 
 # # # 
 # # # # for M=3, m=1000, n=300
-# set.seed(123)
-# ntip=1000;n=300
-# locs <- nodes.2D.simu(ntip)
-# tpars <- find_pars(locs=locs,n=300,ntip=1000)
-# tpars 
+t1 <- Sys.time()
+set.seed(123)
+ntip=1000;n=300
+locs <- nodes.2D.simu(ntip)
+tpars <- find_pars(locs=locs,n=300,ntip=1000)
+tpars 
+t2 <- Sys.time()
+t2-t1
 # # # # put the results: set tpars$grids as the grids argument in A.tree.mult function for aggregation tree construction
 # 
 # 
-# # # # for M=3, m=100, n=90
-# set.seed(123)
-# ntip=100;n=90
-# locs <- nodes.2D.simu(ntip)
-# tpars <- find_pars(locs=locs,n=90,ntip=100)
-# tpars 
-# # # # put the results: set tpars$grids as the grids argument in A.tree.mult function for aggregation tree construction
-# # # 
-# # # # for M=Inf, m=1000, n=300
-# set.seed(123)
-# ntip=1000;n=300
-# locs <- nodes.2D.simu(ntip)
-# tpars <- find_pars(locs=locs,n=300,ntip=1000,M=Inf)
-# tpars 
-# # # # put the results: set tpars$grids as the grids argument in A.tree.mult function for aggregation tree construction
-# # # 
-# # # # for M=Inf, m=100, n=90
-# set.seed(123)
-# ntip=100;n=90
-# locs <- nodes.2D.simu(ntip)
-# tpars <- find_pars(locs=locs,n=90,ntip=100,M=Inf)
-# tpars 
-# # # # put the results: set tpars$grids as the grids argument in A.tree.mult function for aggregation tree construction
+# # # for M=3, m=100, n=90
+set.seed(123)
+ntip=100;n=90
+locs <- nodes.2D.simu(ntip)
+tpars <- find_pars(locs=locs,n=90,ntip=100)
+tpars 
+# # # put the results: set tpars$grids as the grids argument in A.tree.mult function for aggregation tree construction
 # # 
+# # # for M=Inf, m=1000, n=300
+set.seed(123)
+ntip=1000;n=300
+locs <- nodes.2D.simu(ntip)
+tpars <- find_pars(locs=locs,n=300,ntip=1000,M=Inf)
+tpars 
+# # # put the results: set tpars$grids as the grids argument in A.tree.mult function for aggregation tree construction
 # # 
-# #setwd("/Documents/Study/project_1/DART_Code_ALL/Data_Analysis/")
+# # # for M=Inf, m=100, n=90
+set.seed(123)
+ntip=100;n=90
+locs <- nodes.2D.simu(ntip)
+tpars <- find_pars(locs=locs,n=90,ntip=100,M=Inf)
+tpars 
+# # # put the results: set tpars$grids as the grids argument in A.tree.mult function for aggregation tree construction
+# 
+# 
+#setwd("/Documents/Study/project_1/DART_Code_ALL/Data_Analysis/")

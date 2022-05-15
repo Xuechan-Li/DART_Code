@@ -133,9 +133,9 @@ test.fdrl2 <- function(T1p,Dist0,k=5,lambda=0.1,alpha=0.05){
   return(rej)
 }
 
-mt.fdrl2 <- function(n=500,Dist0,k=5,lambda=0.1,alpha=0.05){
+mt.fdrl2 <- function(n=500,Dist0,k=5,lambda=0.1,alpha=0.05,SE=1,nullprop=0){
   nnodes=nrow(Dist0)
-  data <- simdata(n=n,nnodes=nnodes,Dist0)
+  data <- simdata(n=n,nnodes=nnodes,Dist0,SE=SE,nullprop=nullprop)
   true.result <- data$beta1
   T1 <- data$stat
   T1p <- pnorm(T1,lower.tail=FALSE)
@@ -154,8 +154,9 @@ mt.fdrl2 <- function(n=500,Dist0,k=5,lambda=0.1,alpha=0.05){
   fdr2 <- sum((1-truer)*testr4)/max(sum(testr4),1)  
   power2 <- sum(truer*testr4)/sum(truer)
   
-  out <- rbind(c(alpha,k,fdr1,power1,1),
-        c(alpha,k+0.2,fdr2,power2,2))
-  colnames(out) <- c("alpha","k","fdr","power","type")
+  out <-rbind(c(alpha,k,fdr1,power1,1,SE,nullprop),
+        c(alpha,k+0.2,fdr2,power2,2,SE,nullprop))
+  colnames(out) <- c("alpha","k","fdr","power","type","SE","nullprop")
+  #out$SE=SE;out$nullprop=nullprop
   return(out)
 }

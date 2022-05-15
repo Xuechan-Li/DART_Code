@@ -61,7 +61,7 @@ find.p <- function(Tp,lTT,clast=10000,alpha=0.05,length.out=10000,prevrej){
   return(list(out=out,prevrej=c(estfdr1[indx],estfdr2[indx])))
 }
 
-make.group <- function(Dist,grids=0.5,miter=1000,Mgroup=5){
+make.group <- function(Dist,grids=0.5,miter=Inf,Mgroup=5){
   #### function for constructing the \ell layer in aggregation tree. Here, \ell= 2,...,L.
   ## arguments:
   # Dist: (matrix) distance matrix.
@@ -78,7 +78,7 @@ make.group <- function(Dist,grids=0.5,miter=1000,Mgroup=5){
   # Dist0: original Distant matrix
   # Dist : Distant matrix for output
   # Dist1 : Distant matrix with large value
-  infd <- max(Dist)*100
+  infd <- max(Dist)*1000
   diag(Dist1) <- infd
   
   Grij <- NULL
@@ -147,7 +147,7 @@ A.tree.mult <- function(tree=NULL,grids,Dist0=NULL,Mgroup=3){
   }
   m <- nrow(Dist0)
   # Layer 2
-  Llist <- list()
+  Md <- Llist <- list()
   s=1
   
   # Layer \ell
@@ -155,9 +155,12 @@ A.tree.mult <- function(tree=NULL,grids,Dist0=NULL,Mgroup=3){
     outall <- make.group(Dist,grids=grids[s],Mgroup=Mgroup)
     Llist[[s]] <- outall$outmatrix
     Dist <- outall$Dist
+    Dist1 <- Dist
+    diag(Dist1) <- 10000*max(Dist)
+    Md[[s]] <- max(apply(Dist1,1,min))
     s=s+1
   }
-  return(list(Llist=Llist,Dist0=Dist0))
+  return(list(Llist=Llist,Dist0=Dist0,Md=Md))
 }
 
 A.tree.mult2 <- function(tree=NULL,Dist0=NULL,Mgroup=3,L=NULL){
@@ -285,7 +288,7 @@ test.mult <- function(alpha=0.05,Llist,Dist0,T1){
 }
 
 
-mt.mult <- function(n=500,alphai,Llist,Dist0){
+mt.mult <- function(n=500,alphai,Llist,Dist0,SE=1,nullprop=0){
 #### function for conducting simulation in DART paper
   ## arguments:
   # n: (integer) number of samples
@@ -299,7 +302,7 @@ mt.mult <- function(n=500,alphai,Llist,Dist0){
   # Power: the empirical sensitivity
   
   nnodes <- ncol(Dist0)
-  data <- simdata(n=n,nnodes=nnodes,Dist0=Dist0)
+  data <- simdata(n=n,nnodes=nnodes,Dist0=Dist0,SE=SE,nullprop=nullprop)
   fdrpower <- NULL
   for(i in 1:length(alphai)){
     alpha <- alphai[i]
@@ -315,16 +318,16 @@ mt.mult <- function(n=500,alphai,Llist,Dist0){
       testr[out[[s]]] <- 1
       fdr <- sum((1-truer)*testr)/max(sum(testr),1)
       power <- sum(truer*testr)/sum(truer)
-      fdrpower <- rbind(fdrpower,c(alpha,s,fdr,power))
+      fdrpower <- rbind(fdrpower,c(alpha,s,fdr,power,SE,nullprop))
     }
   }
-  colnames(fdrpower) <- c("alpha","Layers","FDR","Power")
+  colnames(fdrpower) <- c("alpha","Layers","FDR","Power","SE","nullprop")
   return(fdrpower)
 }
 
 
 
-find_pars <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=30){
+find_pars <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=50){
   #### function to find tunning parameters for aggregation tree construction.
   ## arguments:
   #locs: (matrix) hypotheses locations, not need to be defined is Distance matrix Dist is given.
@@ -353,7 +356,7 @@ find_pars <- function(locs=NULL,Dist=NULL,n,ntip,Mgroup=3,cm=30){
     eq <- 1
     md0 <- c(md0,md*(Mgroup^(kk-2)*2-1))
     
-    while(i/snm<=md*(Mgroup^(kk-2)*2-1)&eq<=10){
+    while(i/snm<=md*(Mgroup^(kk-2)*2-1)&eq<=2){
       gridsi <- c(grids,i)
       Atree <- A.tree.mult(tree=locs,Dist0=Dist0,grids=gridsi/snm,Mgroup=Mgroup)
       seq1 <- c(seq1,i)
